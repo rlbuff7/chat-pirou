@@ -38,6 +38,20 @@ Cada canal ocupa cerca de 0,5 GB (1080p60) e fica estável, em vez de ~3 GB por 
 - Aviso: o disco virtual do WSL (ext4.vhdx) nunca encolhe sozinho. Espaço apagado no Linux é
   reaproveitado pelo próprio WSL, mas o C: só recupera se alguém compactar o vhdx.
 
+## Lives do YouTube e pico pelo áudio (19/11)
+
+- **YouTube ao vivo:** use o nome `yt-<handle>` (`./multi.sh yt-gameplayrj yt-lipaogamer yt-paulinholokooficial`).
+  - O streamlink grava `youtube.com/@<handle>/live` no mesmo buffer rotativo.
+  - O chat é lido pelo yt-dlp (legenda `live_chat`, sem login). Ao ligar, ele ignora o histórico.
+  - O crédito na tela vira `youtube.com/@<handle>`. O nome certinho de cada handle fica em `CREDITO_YT`, no topo do `clip_watcher.py`.
+- **Áudio somado ao chat** (ideia do chopify):
+  - Cada segmento fechado é lido: o volume de cada segundo e a "cara de risada".
+  - Pico misto quando `PESO_AUDIO*áudio/A_FATOR + PESO_CHAT*chat/FATOR >= 1`, com o áudio pelo menos `A_MIN_MISTO`x a base.
+  - Sem chat lido (YouTube com o chat fora), só o áudio com `A_SO_AUDIO` (4x).
+  - O chat sozinho continua marcando pico como antes.
+  - No `picos.csv`, a coluna das frases começa com `[áudio 4.2x, riso 0.45, chat 1.6x]` quando o pico veio do áudio.
+  - Os valores ficam no topo do `clip_watcher.py`. Se cortar demais, suba `A_FATOR` e `A_SO_AUDIO`.
+
 ## Calibrar FATOR e MINIMO
 
 Uma janela de chat (10 s) vira pico quando tem pelo menos `MINIMO` mensagens **e** pelo menos `FATOR` vezes a

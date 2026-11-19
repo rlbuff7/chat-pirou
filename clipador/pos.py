@@ -404,6 +404,30 @@ def ler_pcm(clipe, sr=16000):
     return np.frombuffer(bruto, dtype=np.int16).astype(np.float32) / 32768.0
 
 
+def volume_e_riso(x, sr=8000):
+    """Para cada segundo de PCM int16 (float32 na escala do int16): RMS e 'cara de risada'
+    (autocorrelação do envelope de 50 ms nos atrasos de 150-300 ms, o "ha-ha-ha")."""
+    import numpy as np
+    rms, riso = [], []
+    passo = sr // 20
+    for i in range(0, len(x) - sr + 1, sr):
+        s = x[i:i + sr]
+        rms.append(float(np.sqrt(np.mean(s ** 2))))
+        env = np.sqrt(np.mean(s[: len(s) // passo * passo].reshape(-1, passo) ** 2, axis=1))
+        env = env - env.mean()
+        den = float(np.dot(env, env)) or 1.0
+        riso.append(max(float(np.dot(env[:-k], env[k:])) / den for k in (3, 4, 5, 6)))
+    return rms, riso
+
+
+def volume_por_segundo(arquivo, sr=8000, timeout=60):
+    """RMS e riso de cada segundo de um arquivo curto (um segmento do buffer, por exemplo)."""
+    import numpy as np
+    bruto = subprocess.run(["ffmpeg", "-v", "error", "-i", str(arquivo), "-vn", "-ac", "1", "-ar", str(sr),
+                            "-f", "s16le", "-"], capture_output=True, timeout=timeout).stdout
+    return volume_e_riso(np.frombuffer(bruto, dtype=np.int16).astype(np.float32), sr)
+
+
 def duracao_de(clipe):
     saida = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of",
                             "default=nw=1:nk=1", str(clipe)], capture_output=True, text=True, timeout=60).stdout.strip()

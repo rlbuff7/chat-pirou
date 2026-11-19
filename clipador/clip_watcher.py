@@ -40,6 +40,7 @@ import csv
 import fcntl
 import queue
 import random
+import re
 import shutil
 import signal
 import socket
@@ -60,6 +61,13 @@ MINIMO = 10        # mensagens mínimas na janela; canal pequeno pede 4 ou 5
 ANTES = 20         # segundos antes da janela do pico: o chat reage depois do lance
 DEPOIS = 5         # segundos depois da janela: pega a reação do streamer
 DESCANSO = 60      # segundos sem marcar outro pico
+# áudio (19/11, ideia do chopify): o volume do streamer também marca pico, somado ao chat
+A_FATOR = 3.0      # áudio forte = volume médio da janela >= A_FATOR x a mediana dos últimos 5 min
+A_PISO = 300.0     # mediana mínima do volume (RMS int16): silêncio na base não infla a razão
+A_SO_AUDIO = 4.0   # sem chat (live do YouTube sem chat lido): só o áudio, e mais exigente
+PESO_AUDIO, PESO_CHAT = 0.6, 0.4   # pico misto: PESO_AUDIO*áudio/A_FATOR + PESO_CHAT*chat/FATOR >= 1
+A_MIN_MISTO = 1.8  # no pico misto o áudio precisa estar pelo menos 1,8x a base
+CREDITO_YT = {"gameplayrj": "Gameplayrj", "paulinholokooficial": "PaulinhoLOKOoficial", "lipaogamer": "LipaoGamer"}
 MODELO = "small"   # faster-whisper: tiny, base, small, medium (maior = melhor e mais lento)
 IDIOMA = "pt"
 # layout, tamanho do vertical, controle A/B, fontes e lista de bloqueio do gancho: topo do pos.py
@@ -86,6 +94,26 @@ def eh_pico(contagem, base):
     if len(base) < 6 or contagem < MINIMO:
         return False
     return contagem >= FATOR * max(statistics.median(base), 1)
+
+
+def eh_pico_misto(razao_audio, razao_chat, tem_chat):
+    """Pico pelo áudio. Com chat: soma ponderada áudio + chat (o chat sozinho continua no eh_pico).
+    Sem chat (YouTube): só o áudio, com A_SO_AUDIO."""
+    if razao_audio is None:
+        return False
+    if not tem_chat:
+        return razao_audio >= A_SO_AUDIO
+    if razao_audio < A_MIN_MISTO:
+        return False
+    return PESO_AUDIO * razao_audio / A_FATOR + PESO_CHAT * razao_chat / FATOR >= 1.0
+
+
+def fonte_do_canal(canal):
+    """'yt-gameplayrj' -> ('youtube', URL da live, crédito); qualquer outro -> Twitch."""
+    if canal.startswith("yt-"):
+        handle = CREDITO_YT.get(canal[3:], canal[3:])
+        return "youtube", f"https://www.youtube.com/@{handle}/live", f"youtube.com/@{handle}"
+    return "twitch", f"https://twitch.tv/{canal}", f"twitch.tv/{canal}"
 
 
 def programa(nome):
@@ -125,7 +153,8 @@ def aguardar_disco(minimo):
 class Sessao:
     """Uma gravação: streamlink -> ffmpeg segmentando em gravacoes/<canal>/<sessao>/."""
 
-    def __init__(self, canal, streamlink):
+    def __init__(self, canal, streamlink, url=None):
+        url = url or f"https://twitch.tv/{canal}"
         self.nome = time.strftime("%Y%m%d-%H%M%S")
         self.pasta = GRAVACOES / canal / self.nome
         self.pasta.mkdir(parents=True, exist_ok=True)
@@ -139,7 +168,7 @@ class Sessao:
         morrer_junto = ["setpriv", "--pdeathsig", "TERM", "--"] if shutil.which("setpriv") else []
         self.sl = subprocess.Popen(
             morrer_junto + [streamlink, "-O", "--loglevel", "warning", "--retry-streams", "15",
-                            f"https://twitch.tv/{canal}", "best"],
+                            url, "best"],
             stdout=subprocess.PIPE)
         self.ff = subprocess.Popen(
             morrer_junto + ["ffmpeg", "-v", "error", "-y", "-i", "pipe:0", "-c", "copy", "-f", "segment",
@@ -320,6 +349,122 @@ class Chat:
         return [(t[:30], n) for t, n in collections.Counter(textos).most_common(quantas)]
 
 
+class ChatYT(Chat):
+    """Chat de uma live do YouTube, lido pelo próprio yt-dlp (legenda 'live_chat', sem login).
+    Mesma interface do Chat da Twitch. Se não der para ler, a contagem fica 0 e o pico vem só do áudio."""
+
+    def __init__(self, canal, url):
+        self.url = url
+        self.pasta = GRAVACOES / "_chat"
+        self.pasta.mkdir(parents=True, exist_ok=True)
+        self.lendo = False                       # True enquanto chega mensagem
+        super().__init__(canal)
+
+    @staticmethod
+    def textos_da_acao(obj):
+        """Textos das mensagens dentro de uma linha do live_chat.json (qualquer aninhamento)."""
+        achados = []
+
+        def andar(o):
+            if isinstance(o, dict):
+                r = o.get("liveChatTextMessageRenderer")
+                if isinstance(r, dict):
+                    runs = (r.get("message") or {}).get("runs") or []
+                    achados.append("".join(x.get("text") or (x.get("emoji") or {}).get("shortcuts", [""])[0]
+                                           for x in runs if isinstance(x, dict)))
+                    return
+                for v in o.values():
+                    andar(v)
+            elif isinstance(o, list):
+                for v in o:
+                    andar(v)
+        andar(obj)
+        return achados
+
+    def _ler(self):
+        import json
+        ytdlp = programa("yt-dlp")
+        base = self.pasta / self.canal
+        while True:
+            for velho in self.pasta.glob(f"{self.canal}.live_chat.json*"):
+                velho.unlink(missing_ok=True)
+            proc = subprocess.Popen([ytdlp, "--js-runtimes", "node", "--no-warnings", "--skip-download",
+                                     "--write-subs", "--sub-langs", "live_chat", "-o", str(base), self.url],
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            lido, resto = 0, b""
+            nomes = [self.pasta / f"{self.canal}.live_chat.json.part", self.pasta / f"{self.canal}.live_chat.json"]
+            while proc.poll() is None:
+                time.sleep(1)
+                # o yt-dlp escreve uma ação por linha no .part (os .part-FragN são temporários, outro formato)
+                arq = next((n for n in nomes if n.exists()), None)
+                if arq is None:
+                    continue
+                try:
+                    with open(arq, "rb") as f:
+                        f.seek(lido)
+                        novo = f.read()
+                except OSError:
+                    continue
+                lido += len(novo)
+                *linhas, resto = (resto + novo).split(b"\n")
+                agora = time.time()
+                for linha in linhas:
+                    # ao ligar vem o histórico recente de uma vez: só conta mensagem do último minuto
+                    marca = re.search(rb'"timestampUsec": ?"(\d+)"', linha)
+                    if marca and agora - int(marca.group(1)) / 1e6 > 60:
+                        continue
+                    try:
+                        textos = self.textos_da_acao(json.loads(linha))
+                    except ValueError:
+                        continue
+                    with self.trava:
+                        for t in textos:
+                            self.contagem += 1
+                            self.recentes.append((agora, t.strip()))
+                    self.lendo = self.lendo or bool(textos)
+            self.lendo = False
+            time.sleep(60)                       # live fora do ar ou chat fechado: tenta de novo
+
+
+class Audio:
+    """Volume (RMS) e 'cara de risada' de cada segundo gravado, lidos dos segmentos já fechados."""
+
+    def __init__(self):
+        self.lidos, self.rms, self.riso = set(), {}, {}
+
+    def atualizar(self, sessao):
+        for nome, ini, _fim in sessao.existentes():
+            if nome in self.lidos:
+                continue
+            self.lidos.add(nome)
+            try:
+                rms, riso = pos.volume_por_segundo(sessao.pasta / nome)
+            except Exception as erro:  # segmento ruim não derruba o canal
+                print(f"aviso: não li o áudio de {nome} ({type(erro).__name__})")
+                continue
+            for i, (a, b) in enumerate(zip(rms, riso)):
+                self.rms[int(ini) + i] = a
+                self.riso[int(ini) + i] = b
+        if len(self.rms) > 2 * BUFFER_S:          # guarda só o que a base usa
+            corte = max(self.rms) - BUFFER_S
+            for t in [t for t in self.rms if t < corte]:
+                self.rms.pop(t, None)
+                self.riso.pop(t, None)
+
+    def fim(self):
+        """Último segundo com áudio lido (+1), ou None."""
+        return max(self.rms) + 1 if self.rms else None
+
+    def razao(self, ate, janela=JANELA):
+        """(volume médio de [ate-janela, ate) / mediana dos 5 min antes, maior riso da janela) ou (None, 0)."""
+        vals = [self.rms[t] for t in range(int(ate - janela), int(ate)) if t in self.rms]
+        base = [v for t, v in self.rms.items() if ate - 300 <= t < ate - janela]
+        if len(vals) < janela // 2 or len(base) < 60:
+            return None, 0.0
+        riso = max((self.riso.get(t, 0.0) for t in range(int(ate - janela), int(ate))), default=0.0)
+        return statistics.mean(vals) / max(statistics.median(base), A_PISO), riso
+
+
 # ---------- pós-produção ----------
 
 def pos_producao(fila):
@@ -403,10 +548,12 @@ def main(canal, demo=False, manter=False):
                 shutil.rmtree(velho, ignore_errors=True)
                 print(f"buffer antigo removido: {velho.name}")
 
+    origem, url, credito = fonte_do_canal(canal)
     print(f"buffer de {BUFFER_S} s em {GRAVACOES / canal}"
           + (" (--manter: nada será apagado)" if manter else "")
-          + f" | C: com {livre_gb():.1f} GB livres (para de gravar abaixo de {DISCO_MIN_GB} GB)")
-    chat = Chat(canal)
+          + f" | C: com {livre_gb():.1f} GB livres (para de gravar abaixo de {DISCO_MIN_GB} GB)"
+          + f" | fonte {origem}: {url}")
+    chat = ChatYT(canal, url) if origem == "youtube" else Chat(canal)
     fila = queue.Queue()
     fila_pos = threading.Thread(target=pos_producao, args=(fila,))
     fila_pos.start()
@@ -428,8 +575,9 @@ def main(canal, demo=False, manter=False):
         while True:
             aguardar_disco(minimo_disco)
             minimo_disco = DISCO_MIN_GB
-            sessao = Sessao(canal, streamlink)
+            sessao = Sessao(canal, streamlink, url)
             sessoes.append(sessao)
+            audio = Audio()
             print(f"esperando a live de {canal} (Ctrl+C para parar)")
             while sessao.vivo() and not any(sessao.pasta.glob("seg_*.ts")):
                 time.sleep(1)
@@ -443,6 +591,8 @@ def main(canal, demo=False, manter=False):
             print(f"gravando em {sessao.pasta.relative_to(PASTA)}")
 
             base, ultimo, forcado = [], -DESCANSO, False
+            janelas_chat = collections.deque(maxlen=HISTORICO)   # (posição gravada no fim da janela, msgs)
+            audio_ate = None                                       # fim da última janela de áudio avaliada
             proxima = time.time() + JANELA
             prox_batida = time.time() + BATIDA
             motivo_parada = None
@@ -454,21 +604,47 @@ def main(canal, demo=False, manter=False):
                 relogio = time.time() - sessao.t0
                 if fonte == "relogio":
                     print(f"aviso: nenhum segmento listado ainda, usando o relógio ({relogio:.0f} s) como posição")
+                janelas_chat.append((agora, contagem))
+                mediana = statistics.median(base) if base else 0
                 forcar = demo and not forcado and agora >= DEMO_APOS
-                if (forcar or eh_pico(contagem, base)) and agora - ultimo > DESCANSO:
+                ponto, motivo = None, ""
+                if forcar or eh_pico(contagem, base):
+                    ponto = agora
+                else:
+                    # áudio: avalia cada janela de 10 s assim que o segmento dela fecha (chega ~10 s atrasado)
+                    try:
+                        audio.atualizar(sessao)
+                    except OSError as erro:
+                        print(f"aviso: leitura do áudio falhou ({erro})")
+                    fim_audio = audio.fim()
+                    if fim_audio is not None and (audio_ate is None or fim_audio - audio_ate >= JANELA):
+                        audio_ate = fim_audio
+                        razao_a, riso = audio.razao(fim_audio)
+                        # o chat reage depois do lance: maior janela de chat entre o lance e 15 s depois
+                        perto = [n for t, n in janelas_chat if fim_audio - 5 <= t <= fim_audio + 15]
+                        msgs = max(perto, default=0)
+                        razao_c = msgs / max(mediana, 1)
+                        tem_chat = origem == "twitch" or getattr(chat, "lendo", False)
+                        if eh_pico_misto(razao_a, razao_c, tem_chat):
+                            ponto = fim_audio
+                            motivo = f"[áudio {razao_a:.1f}x, riso {riso:.2f}, chat {razao_c:.1f}x]"
+                if ponto is not None and ponto - ultimo > DESCANSO:
+                    agora = ponto
                     forcado = forcado or forcar
                     ultimo = agora
                     inicio = max(agora - JANELA - ANTES, 0.0)
                     fim = agora + DEPOIS
                     saida = CLIPES / f"{canal}-{time.strftime('%Y%m%d-%H%M%S')}.mp4"
-                    textos = chat.textos(JANELA + 5)
+                    textos = chat.textos(JANELA + 15 if motivo else JANELA + 5)
                     mais = [f"{t} x{n}" for t, n in chat.mais_ditas(JANELA + 5, textos=textos)]
-                    mediana = statistics.median(base) if base else 0
+                    if motivo:
+                        mais = [motivo] + mais
                     ctx = pos.analisar_chat(canal, contagem, textos)
                     ctx["canal"] = canal
                     ctx["layout"] = LAYOUT
-                    print(f"pico{' (demo)' if forcar else ''}: {contagem} msgs em {JANELA} s "
-                          f"(base {mediana:.0f}) | gravado {agora:.0f} s ({fonte}), relógio {relogio:.0f} s | "
+                    ctx["credito"] = credito
+                    print(f"pico{' (demo)' if forcar else ''}{' pelo áudio' if motivo else ''}: {contagem} msgs em "
+                          f"{JANELA} s (base {mediana:.0f}) | gravado {agora:.0f} s ({fonte}), relógio {relogio:.0f} s | "
                           f"tipo {ctx['tipo']} | gancho: {' / '.join(ctx['gancho'])} | {' | '.join(mais[:3])}")
 
                     def linha(numero, ctx=ctx, agora=agora, relogio=relogio, contagem=contagem, mediana=mediana,
@@ -534,6 +710,27 @@ def autoteste():
     assert not eh_pico(20, [10] * 10), "2x a mediana não é pico"
     assert eh_pico(40, [10] * 10), "4x a mediana é pico"
     assert eh_pico(12, [0] * 10), "chat parado que acorda é pico"
+    # áudio + chat (19/11)
+    assert not eh_pico_misto(None, 5, True), "sem áudio lido não marca"
+    assert eh_pico_misto(4.0, 1.5, True), "grito (4x) com chat animado (1,5x) é pico"
+    assert not eh_pico_misto(3.0, 1.0, True), "áudio 3x com chat normal não basta"
+    assert eh_pico_misto(5.0, 0.5, True), "grito muito forte basta mesmo com chat parado"
+    assert not eh_pico_misto(1.5, 6.0, True), "áudio baixo não vira pico misto (o chat sozinho já tem regra)"
+    assert eh_pico_misto(4.5, 0, False) and not eh_pico_misto(3.5, 0, False), "sem chat: só áudio >= A_SO_AUDIO"
+    assert fonte_do_canal("yt-gameplayrj") == ("youtube", "https://www.youtube.com/@Gameplayrj/live",
+                                               "youtube.com/@Gameplayrj")
+    assert fonte_do_canal("cellbit") == ("twitch", "https://twitch.tv/cellbit", "twitch.tv/cellbit")
+    acao = {"replayChatItemAction": {"actions": [{"addChatItemAction": {"item": {"liveChatTextMessageRenderer": {
+        "message": {"runs": [{"text": "KKKK "}, {"emoji": {"shortcuts": [":face-with-tears-of-joy:"]}}]}}}}}]}}
+    assert ChatYT.textos_da_acao(acao) == ["KKKK :face-with-tears-of-joy:"]
+    import numpy as np
+    tom = (3000 * np.sin(np.arange(16000) * 2 * np.pi * 440 / 8000)).astype(np.float32)
+    rms, riso = pos.volume_e_riso(tom)
+    assert len(rms) == 2 and 2000 < rms[0] < 2200, rms
+    a = Audio()
+    a.rms = {t: 500.0 for t in range(0, 300)}
+    a.rms.update({t: 2500.0 for t in range(300, 310)})
+    assert abs(a.razao(310)[0] - 5.0) < 1e-6 and a.razao(30)[0] is None
     for nome in ("streamlink", "ffmpeg", "ffprobe"):
         assert programa(nome), f"{nome} não encontrado"
     import faster_whisper  # noqa: F401
