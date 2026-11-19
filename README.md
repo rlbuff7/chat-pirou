@@ -196,7 +196,7 @@ Detalhes e números em [`pesquisa/virais-gta6.md`](pesquisa/virais-gta6.md) e
 
 ## Licença
 
-Código sob [MIT](LICENSE): pode usar, copiar, modificar e distribuir, inclusive comercialmente, desde que
+Código sob [MIT](LICENSE) (exceções em [NOTICE.md](NOTICE.md)): pode usar, copiar, modificar e distribuir, inclusive comercialmente, desde que
 mantenha o aviso de copyright. **Sem garantia:** o software é fornecido "no estado em que se encontra".
 
 Ficam de fora da MIT:
