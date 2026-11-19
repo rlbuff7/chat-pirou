@@ -1,0 +1,181 @@
+# Lista de bloqueio do gancho do vertical (pos.py).
+# Uma frase do chat que contenha qualquer termo daqui NUNCA vira gancho na tela
+# (o gancho cai para o modelo genérico do tipo). Também vale para mascarar com ***
+# a legenda queimada nos primeiros 7 s (palavrão forte limita anúncio no YouTube).
+#
+# Como casa: o texto é normalizado (minúsculas, sem acento, números-leet como letras,
+# letras repetidas viram uma só: "puuuta" = "puta"). Os termos abaixo também.
+#   termo        casa só a palavra inteira (ou a frase inteira, se tiver espaços)
+#   *termo       casa em qualquer pedaço do texto (use só em ofensa que não vira palavra boa)
+#   !termo       além de bloquear, também vira *** na legenda queimada dos 7 primeiros segundos
+# Linhas com # são comentário. Pode editar: um termo por linha.
+
+# ---- palavrões pesados e ofensas (pt-BR) ----
+!caralho
+carai
+!porra
+!puta
+puto
+putaria
+!pqp
+!puta que pariu
+!fdp
+!filho da puta
+filha da puta
+vsf
+vai se foder
+vtnc
+vai tomar no cu
+tomar no cu
+!cu
+cuzao
+cuzona
+!buceta
+bct
+xoxota
+!piroca
+pica
+rola
+punheta
+pau no cu
+arrombado
+arrombada
+babaca
+otario
+otaria
+idiota
+imbecil
+retardado
+retardada
+mongol
+mongoloide
+desgraca
+desgracado
+merda
+bosta
+corno
+corna
+vagabundo
+vagabunda
+safado
+safada
+prostituta
+piranha
+vadia
+lixo humano
+*foder
+*fodid
+*cacete
+*cuzao
+
+# ---- ódio, preconceito, xingamento de grupo (pt-BR) ----
+viado
+veado
+viadinho
+bicha
+sapatao
+traveco
+tranny
+macaco
+macaca
+crioulo
+crioula
+neguinho
+preto fedido
+negro fedido
+nazista
+nazi
+hitler
+*nazis
+judeu fedido
+gordo nojento
+gorda nojenta
+aleijado
+retardo
+puta que o pariu
+
+# ---- violência, autoagressão, crime ----
+estupro
+estuprar
+estuprador
+suicidio
+suicida
+se mata
+se matar
+mata se
+morre logo
+morra
+kys
+kill yourself
+pedofilo
+pedofila
+pedofilia
+terrorista
+bomba no
+atentado
+
+# ---- sexual explícito ----
+sexo
+transar
+gozar
+gozei
+nudes
+porno
+pornografia
+pornô
+tesao
+pelada
+pelado
+siririca
+chupa
+chupar
+mamada
+
+# ---- palavrões pesados e ofensas (en) ----
+!fuck
+!fucking
+fucker
+!motherfucker
+mf
+wtf
+!shit
+shitty
+!bitch
+!cunt
+dick
+dickhead
+cock
+!pussy
+!asshole
+ass
+bastard
+slut
+whore
+douche
+cum
+porn
+!nigger
+!nigga
+niggas
+!faggot
+fag
+fags
+retard
+retarded
+rape
+raped
+rapist
+nazi
+molest
+pedo
+suicide
+dumbass
+
+# ---- spam, golpe, venda ----
+pix
+cassino
+apostas
+fortune tiger
+tigrinho
+inscreva
+sorteio

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2560" height="1440" viewBox="0 0 2560 1440">
+<rect width="2560" height="1440" fill="#0B0B12"/>
+<polyline points="-20,905 20,912 65,905 128,901 184,907 238,895 302,901 357,914 415,915 454,907 504,915 554,895 621,902 663,913 727,892 792,912 855,903 912,907 982,914 1046,898 1090,913 1152,897 1198,908 1242,906 1309,892 1376,916 1421,906 1491,905 1556,915 1605,915 1658,894 1725,902 1770,910 1824,916 1892,899 1895,905" fill="none" stroke="#FFD400" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="2070,905 2133,900 2181,904 2238,900 2278,894 2335,910 2399,895 2441,904 2507,909 2546,897 2580,894" fill="none" stroke="#FFD400" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1895,905 1965,548 2025,934 2070,905" fill="none" stroke="#0B0B12" stroke-width="36.3" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1895,905 1965,548 2025,934 2070,905" fill="none" stroke="#FF2E88" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
+<text x="1190" y="750" text-anchor="middle" font-family="Anton" font-weight="400" font-size="215" fill="#F5F7FA" letter-spacing="7">CHAT <tspan fill="#FFD400">PIROU</tspan></text>
+<text x="1190" y="835" text-anchor="middle" font-family="Montserrat" font-weight="800" font-size="54" fill="#F5F7FA" >Cortes de lives  |  GTA 6 e mais</text>
+</svg>

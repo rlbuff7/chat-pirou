@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="500" viewBox="0 0 1500 500">
+<rect width="1500" height="500" fill="#0B0B12"/>
+<polyline points="-20,428 20,436 62,431 94,434 127,426 158,435 194,420 237,427 274,421 317,420 365,421 402,430 450,436 498,430 529,437 560,429 594,424 628,429 676,425 727,422 775,429 811,426 858,432 906,420 942,428 989,427 1029,427 1073,426 1110,433 1162,433 1194,429 1240,428 1265,428" fill="none" stroke="#FFD400" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1440,428 1480,432 1519,430 1520,421" fill="none" stroke="#FFD400" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1265,428 1335,92 1395,448 1440,428" fill="none" stroke="#0B0B12" stroke-width="23.1" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1265,428 1335,92 1395,448 1440,428" fill="none" stroke="#FF2E88" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+<text x="790" y="238" text-anchor="middle" font-family="Anton" font-weight="400" font-size="150" fill="#F5F7FA" letter-spacing="5">CHAT <tspan fill="#FFD400">PIROU</tspan></text>
+<text x="790" y="298" text-anchor="middle" font-family="Montserrat" font-weight="800" font-size="36" fill="#F5F7FA" >Cortes de lives  |  GTA 6 e mais</text>
+<text x="790" y="350" text-anchor="middle" font-family="Montserrat" font-weight="800" font-size="27" fill="#19E3FF" >@chat.pirou no TikTok, Instagram e YouTube</text>
+</svg>

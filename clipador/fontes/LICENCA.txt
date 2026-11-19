@@ -1,0 +1,2 @@
+Anton (Anton Project Authors) e Montserrat (The Montserrat Project Authors) sob SIL Open Font License 1.1 (https://openfontlicense.org).
+Usadas na legenda e no gancho do vertical (ffmpeg ass=...:fontsdir=fontes).

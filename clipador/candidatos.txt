@@ -1,0 +1,17 @@
+# Candidatos para o auto_lancamento.py: um login da Twitch por linha, em ordem de prioridade.
+# Fonte: ../pesquisa/streamers.md (18/11/2026). Só liga quem estiver ao vivo com GTA VI.
+alanzoka        # anunciou live às 08:00 BRT de 18/11 (liberação da Nova Zelândia) [imprensa]
+paulinholokobr
+davyjones       # antecipa [imprensa]; principal no YouTube
+saninplay       # antecipa [imprensa]; principal no YouTube
+luquet4
+cellbit
+spkclb
+move_mind
+stolenbr        # maratona de 48 h anunciada no título
+jeffaocs
+jonvlogs
+bisteconee
+coringa         # login [verificar]
+baiano
+rafaao

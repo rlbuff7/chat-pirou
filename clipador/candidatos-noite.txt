@@ -1,0 +1,18 @@
+# Candidatos para a noite do lançamento no Brasil (00:00 de 19/11/2026), em ordem de prioridade.
+# Uso: .venv/bin/python auto_lancamento.py --lista candidatos-noite.txt --ate 03:00
+# Principais e reservas conforme ../pesquisa/streamers.md. Só liga quem estiver ao vivo com GTA VI.
+alanzoka
+paulinholokobr
+luquet4
+cellbit         # reserva
+jonvlogs        # reserva
+stolenbr        # reserva; maratona de 48 h anunciada
+spkclb
+move_mind
+davyjones
+saninplay
+bisteconee
+jeffaocs
+coringa         # login [verificar]
+baiano
+rafaao

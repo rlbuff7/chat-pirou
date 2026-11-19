@@ -1,0 +1,5 @@
+streamlink==8.6.3
+faster-whisper==1.2.1
+av==16.0.1  # o av 19 quebra o faster-whisper 1.2.1 (metadata_errors)
+opencv-python-headless<5  # só para --layout facecam (Haar cascade que vem no pacote); a 5.x não tem CascadeClassifier
+yt-dlp==2026.10.26  # lives do YouTube (yt_corte.py) e pesquisa de virais (virais.py); precisa do nodejs

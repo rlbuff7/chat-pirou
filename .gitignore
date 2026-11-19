@@ -1,0 +1,18 @@
+# ambiente e dados locais (nunca subir)
+clipador/.venv/
+clipador/gravacoes/
+clipador/clipes/
+clipador/logs/
+clipador/local.conf
+conteudo/
+__pycache__/
+*.pyc
+
+# mídia e segredos
+*.mp4
+*.m4a
+*.ts
+*.mkv
+.env
+*.cookies
+cookies.txt
