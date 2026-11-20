@@ -48,16 +48,23 @@ def e_gta6(meta):
 
 
 def ao_vivo(canal):
-    """metadata (category/title) se o canal estiver ao vivo, senão None."""
+    """metadata (category/title) se o canal estiver ao vivo, senão None.
+    `yt-<handle>` é live do YouTube (youtube.com/@handle/live): lá não tem categoria, vale o título."""
+    url = f"https://www.youtube.com/@{canal[3:]}/live" if canal.startswith("yt-") else f"https://twitch.tv/{canal}"
     try:
         saida = subprocess.run(
-            [str(PASTA / ".venv/bin/streamlink"), "--json", f"https://twitch.tv/{canal}"],
+            [str(PASTA / ".venv/bin/streamlink"), "--json", url],
             capture_output=True, text=True, timeout=60,
         ).stdout
         dados = json.loads(saida)
     except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError):
         return None
-    return (dados.get("metadata") or {}) if dados.get("streams") else None
+    if not dados.get("streams"):
+        return None
+    meta = dict(dados.get("metadata") or {})
+    if canal.startswith("yt-"):
+        meta["category"] = None   # no YouTube a categoria é "Gaming", não o jogo: decide o título
+    return meta
 
 
 def main():

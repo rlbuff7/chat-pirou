@@ -12,6 +12,8 @@ Ferramenta: `clipador/postagem.py` (rodar com `.venv/bin/python`). Registro: `C:
 - Instagram: crédito por escrito, **sem marcar o @ do streamer** (dono, 19/11: "sem marca não precisa").
 - **Nunca ficar parado** (dono, 19/11 ~18:20): entre um post e outro, procurar o que está em alta (`clipador/virais.py` + Shorts/Reels mais vistos de GTA 6 do dia e o que o dono manda na DM), atualizar `pesquisa/virais-gta6.md` e fazer nossos cortes no mesmo formato a partir das lives (cellbit, Davy Jones, Paulinho, Lipão, alanzoka). Nunca reaproveitar o vídeo de outro canal.
 - **Janela do Chrome minimizada** (`innerWidth` = 0 no `javascript_tool`): não postar. Com a janela minimizada a digitação aparece na tela mas não chega ao formulário (em 19/11 o TikTok publicou o 12 com a legenda "12-barco-davyjones"). Pedir ao dono para restaurar a janela.
+  Saída que funciona sem o dono: fechar a aba do grupo (o grupo some) e chamar `tabs_context_mcp` com `createIfEmpty` (abre janela nova, 1195x815).
+- **Instagram fora do ar desde 19/11 ~22:55:** sessão deslogada e `instagram.com/chat.pirou` mostra "Profile não está disponível" (outros perfis abrem normal sem login). Motivo, no e-mail do Instagram: "verifique sua conta para continuar a usá-la / confirme que você é uma pessoa" (checagem de robô, prazo de 180 dias). A verificação é do dono (login, CAPTCHA ou selfie: nunca pelo Claude). **Não postar no Instagram e não tentar entrar** (login é só do dono) até ele resolver. Pendente nele quando voltar: 15-banco-lipao (o vídeo fica em `Videos\chatpirou-postar` porque o `limpar` só apaga o que saiu nas 3 redes).
 - Nunca o mesmo clipe duas vezes na mesma rede (o `candidatos` já esconde os postados).
 - Um clipe por rodada, postado nas três redes.
 
@@ -58,3 +60,10 @@ Captcha, pedido de login ou código, verificação de conta, termo para aceitar,
 - Às 22:30: `./parar.sh` e ligar a noite com `setsid nohup .venv/bin/python auto_lancamento.py --lista candidatos-noite.txt --ate 03:00 --max 2 > logs/auto.out 2>&1 &` dentro de um `wsl.exe` em primeiro plano. O WSL precisa estar acordado (VS Code ou terminal WSL aberto).
 - Não cortar a live oficial da Rockstar (02:00).
 - A partir de 00:00 as lives entram na história: redobrar o passo 4.
+
+## Desempenho do primeiro dia (conferido em 20/11 ~00:20)
+
+- **Instagram Reels:** 130 a 230 views por Reel; o do cellbit (carro/foto) fez ~2 mil. Era a única rede distribuindo, e caiu na verificação de pessoa às ~22:55.
+- **YouTube Shorts:** 0 a 8 views por Short (14 Shorts). Verificações sempre "No issues found".
+- **TikTok:** 0 a 6 views por vídeo (12 vídeos), sem aviso visível no TikTok Studio.
+- Leitura: contas novas postando ~10 cortes por dia de conteúdo de terceiros, por automação. Hipóteses para o dono decidir: menos posts por dia nas contas novas; postar parte à mão pelo celular; conferir no app se há aviso de restrição (TikTok: "Status da conta"; YouTube: "Restrições" no Studio).

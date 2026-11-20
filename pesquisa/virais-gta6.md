@@ -44,3 +44,11 @@ A "fórmula" abaixo é leitura do título e do formato, não prova de por que o 
 - **Comentários:** "como que os cara descobriu isso".
 - **Pedido do dono:** fazer **curiosidades do GTA 6** nesse estilo.
 - **Como fazemos:** o corte do streamer achando a curiosidade, com gancho "COMO ACHAR… / TEM … NO GTA 6". A legenda diz onde fica e como chegar, só com o que o vídeo mostra (nada inventado), e fecha com uma pergunta ou mistério.
+
+## Atualização 19/11 ~22:20 (busca do YouTube, vídeos de hoje)
+
+- **Relacionamento puxa:** "vou trair a Lucia no GTA 6" (Piuzinho, 268 mil em horas). Ficar de olho em momentos de encontro, ciúme e "namoro" no jogo livre (sem diálogo de história).
+- **Concorrência direta nos nossos streamers:** já tem canal fazendo "DAVY JONES' BEST MOMENTS IN GTA 6 #01" (16 mil) e vários canais de corte novos ("Cellbit Lives", "O MELHOR DA LIVE · GTA 6", "Fábrica de Cortes · GTA 6"). Vence quem posta rápido e com gancho específico.
+- **Curiosidade de mapa sem spoiler** continua forte ("MAP CURIOSITIES AND SECRETS (No Spoilers)", 15,9 mil). O nosso 12 (mapa do GTA 5) e o 15 (pacote de tinta no banco) são desse tipo.
+- Lives grandes hoje: alanzoka 1,3 mi, Flow 617 mil, Overman 263 mil (pt-BR, "Explorando TUDO").
+- **Não fazer:** o cellbit está num quebra-cabeça de mistério escondido (preto e branco, discos, símbolos). Mostrar a solução estraga o mistério para quem caça: pular até o fim da primeira semana.
