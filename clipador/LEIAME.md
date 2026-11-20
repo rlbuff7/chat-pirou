@@ -44,6 +44,10 @@ Cada canal ocupa cerca de 0,5 GB (1080p60) e fica estável, em vez de ~3 GB por 
   - O streamlink grava `youtube.com/@<handle>/live` no mesmo buffer rotativo.
   - O chat é lido pelo yt-dlp (legenda `live_chat`, sem login). Ao ligar, ele ignora o histórico.
   - O crédito na tela vira `youtube.com/@<handle>`. O nome certinho de cada handle fica em `CREDITO_YT`, no topo do `clip_watcher.py`.
+- **Momento que já saiu do buffer, com a live ainda no ar:** `yt_corte.py ao_vivo URL HH:MM:SS HH:MM:SS nome [--atraso 10]`.
+  - O `--download-sections` do yt-dlp recusa live em andamento ("cannot be partially downloaded").
+  - O YouTube guarda a live inteira em pedaços DASH numerados (`sq`). O cabeçalho do pedaço dá a hora de parede, o tempo da live e o último `sq`; daí sai o início da live e o tamanho do pedaço (5 s).
+  - O horário é o do relógio (o mesmo do nome do clipe). `--atraso` desconta o atraso da live.
 - **Áudio somado ao chat** (ideia do chopify):
   - Cada segmento fechado é lido: o volume de cada segundo e a "cara de risada".
   - Pico misto quando `PESO_AUDIO*áudio/A_FATOR + PESO_CHAT*chat/FATOR >= 1`, com o áudio pelo menos `A_MIN_MISTO`x a base.

@@ -4,7 +4,8 @@
     .venv/bin/python yt_corte.py reacoes AUDIO [--n 30] [--pular 600]  # picos de reação (grito/risada) + fala em volta
     .venv/bin/python yt_corte.py picos URL [--n 8] [--pular 900]     # trechos mais revistos (heatmap do YouTube)
     .venv/bin/python yt_corte.py baixar URL INICIO FIM NOME [--altura 1080]   # só o trecho (HH:MM:SS ou segundos)
-    .venv/bin/python yt_corte.py varrer ARQUIVO [--passo 10]          # folha de quadros + picos de áudio, para escolher
+    .venv/bin/python yt_corte.py ao_vivo URL 20:44:30 20:47:45 NOME [--atraso 15]   # trecho de live AINDA no ar, pelo horário
+    .venv/bin/python yt_corte.py varrer ARQUIVO [--passo 10]        # folha de quadros + picos de áudio, para escolher
     .venv/bin/python yt_corte.py vertical ARQUIVO CANAL CREDITO "LINHA 1" "LINHA 2"   # vertical 1080x1920 do arquivo inteiro
 
 O heatmap tem 100 faixas por vídeo (numa live de 10 h, cada faixa tem ~6 min): ele acha a região,
@@ -237,6 +238,69 @@ def _baixar_pedacos(url, ini, fim, saida, altura):
         sys.exit(r.stderr[-800:])
 
 
+def ao_vivo(url, ini, fim, nome, altura=1080, atraso=0.0):
+    """Trecho de uma live que AINDA ESTÁ NO AR, pelo horário de parede (HH:MM[:SS] de hoje).
+
+    O --download-sections não corta live em andamento ("cannot be partially downloaded"). O YouTube
+    serve a live em pedaços DASH numerados (sq=0, 1, 2...), todos desde o começo. O cabeçalho do pedaço
+    traz a hora de parede (X-Walltime-Ms), o tempo da live (X-Head-Time-Sec) e o último sq: daí sai o
+    início da live e quantos segundos tem cada pedaço. `atraso` desconta o atraso da live, em segundos.
+    """
+    import datetime
+    import urllib.request
+    canal = nome.split("-")[0]
+    pasta = YT / canal
+    pasta.mkdir(parents=True, exist_ok=True)
+    saida = pasta / f"{nome}.mp4"
+    r = subprocess.run(YTDLP + ["-j", "--live-from-start", url], capture_output=True, text=True, timeout=300)
+    if r.returncode != 0:
+        sys.exit(r.stderr[-800:])
+    fmts = json.loads(r.stdout)["formats"]
+    dash = [f for f in fmts if f.get("protocol") == "http_dash_segments_generator"]
+    video = max((f for f in dash if f.get("vcodec", "none") != "none" and (f.get("height") or 0) <= altura
+                 and str(f.get("vcodec")).startswith("avc1")), key=lambda f: (f.get("height") or 0, f.get("tbr") or 0))
+    som = max((f for f in dash if f.get("vcodec") == "none" and f.get("ext") == "m4a"), key=lambda f: f.get("tbr") or 0)
+
+    def pedaco(f, sq):
+        u = f["url"] + ("&" if "?" in f["url"] else "?") + f"sq={sq}"
+        req = urllib.request.Request(u, headers=f.get("http_headers") or {})
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            return resp.read(), resp.headers
+
+    _, h = pedaco(som, 0)
+    cabeca_seq, cabeca_t = int(h["X-Head-Seqnum"]), float(h["X-Head-Time-Millis"]) / 1000
+    passo = cabeca_t / cabeca_seq
+    inicio_live = int(h["X-Walltime-Ms"]) / 1000 - cabeca_t
+    hoje = datetime.date.today()
+
+    def na_live(t):
+        hora = datetime.datetime.combine(hoje, datetime.time.fromisoformat(t))
+        return hora.timestamp() - inicio_live - atraso
+
+    t0, t1 = na_live(ini), na_live(fim)
+    if t0 < 0 or t1 > cabeca_t or t1 <= t0:
+        sys.exit(f"fora da live: {t0:.0f}-{t1:.0f} s (a live tem {cabeca_t:.0f} s)")
+    s0, s1 = int(t0 // passo), min(cabeca_seq, int(t1 // passo) + 1)
+    print(f"live começou {datetime.datetime.fromtimestamp(inicio_live):%H:%M:%S}; pedaços de {passo:.1f} s; "
+          f"sq {s0}-{s1} ({hms(t0)}-{hms(t1)} da live)")
+    partes = []
+    for f, ext in ((video, "v.mp4"), (som, "a.m4a")):
+        p = saida.with_name(saida.stem + "." + ext)
+        with open(p, "wb") as out:
+            for sq in range(s0, s1 + 1):
+                out.write(pedaco(f, sq)[0])
+        partes.append(p)
+    desloc = t0 - s0 * passo
+    r = subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(partes[0]), "-i", str(partes[1]), "-ss", f"{desloc:.2f}",
+                        "-t", f"{t1 - t0:.2f}", "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "veryfast",
+                        "-crf", "18", "-c:a", "aac", "-b:a", "160k", str(saida)], capture_output=True, text=True)
+    for p in partes:
+        p.unlink(missing_ok=True)
+    if r.returncode != 0:
+        sys.exit(r.stderr[-800:])
+    print(f"baixado: {saida} ({saida.stat().st_size / 1e6:.1f} MB, {_duracao(saida):.0f} s)")
+
+
 def varrer(arquivo, passo=10):
     arquivo = Path(arquivo)
     folha = arquivo.with_suffix(".folha.jpg")
@@ -298,6 +362,8 @@ if __name__ == "__main__":
         comentarios(a[1], opc("--n", 12), opc("--max", 600))
     elif a[0] == "baixar":
         baixar(a[1], a[2], a[3], a[4], opc("--altura", 1080))
+    elif a[0] == "ao_vivo":
+        ao_vivo(a[1], a[2], a[3], a[4], opc("--altura", 1080), opc("--atraso", 0.0))
     elif a[0] == "varrer":
         varrer(a[1], opc("--passo", 10))
     elif a[0] == "vertical":
