@@ -15,7 +15,8 @@ AQUI = Path(__file__).resolve().parent
 SAIDA = AQUI / "clipes" / "virais"
 YTDLP = [str(AQUI / ".venv/bin/yt-dlp"), "--js-runtimes", "node", "--no-warnings", "--flat-playlist", "-J"]
 BUSCAS = ["gta 6 alanzoka", "gta 6 cellbit", "gta 6 davy jones", "gta 6 paulinho o loko", "gta 6 lipao",
-          "gta 6 cortes", "gta 6 kkkkkk", "gta 6 shorts brasil", "gta 6 flow games", "gta 6 engraçado"]
+          "gta 6 cortes", "gta 6 kkkkkk", "gta 6 shorts brasil", "gta 6 flow games", "gta 6 engraçado",
+          "gta 6 curiosidades", "gta 6 bug", "gta 6 momentos engraçados"]
 SEMANA_POR_VIEWS = "CAMSAggD"
 
 

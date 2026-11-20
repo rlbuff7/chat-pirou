@@ -3,6 +3,7 @@
     .venv/bin/python yt_corte.py audio URL NOME                      # só o áudio da live (~300 MB em 7 h)
     .venv/bin/python yt_corte.py reacoes AUDIO [--n 30] [--pular 600]  # picos de reação (grito/risada) + fala em volta
     .venv/bin/python yt_corte.py picos URL [--n 8] [--pular 900]     # trechos mais revistos (heatmap do YouTube)
+    .venv/bin/python yt_corte.py picos_chat URL [--n 15] [--palavras sinuca,bug]   # picos de risada no replay do chat
     .venv/bin/python yt_corte.py baixar URL INICIO FIM NOME [--altura 1080]   # só o trecho (HH:MM:SS ou segundos)
     .venv/bin/python yt_corte.py ao_vivo URL 20:44:30 20:47:45 NOME [--atraso 15]   # trecho de live AINDA no ar, pelo horário
     .venv/bin/python yt_corte.py varrer ARQUIVO [--passo 10]        # folha de quadros + picos de áudio, para escolher
@@ -94,6 +95,74 @@ def comentarios(url, n=12, maximo=600):
     print(f"{d.get('title')} | {hms(dur)} | {len(d.get('comments') or [])} comentários, {len(marcas)} minutagens")
     for g in sorted(grupos, key=lambda g: -g["peso"])[:n]:
         print(f"{hms(g['ini'])}-{hms(g['fim'])}  {g['n']} citações, {g['peso']} curtidas | {g['melhor'][1]}")
+
+
+RISADA = ("kkk", "kaka", "haha", "rsrs", "😂", "🤣")
+
+
+def picos_chat(url, n=15, palavras="", janela=30, pular=600):
+    """Picos de risada no replay do chat de uma live que já acabou (o mesmo sinal do clipador, sem gravar).
+
+    Baixa o chat uma vez (clipes/yt/_chat/<id>.live_chat.json, ~40 MB por hora de live) e lê linha a linha.
+    Para cada pico mostra a frase que o chat mais repetiu (bom gancho: "CHAT: ...") e um trecho sugerido,
+    que começa 40 s antes porque o chat reage com 10 a 30 s de atraso. `palavras` (vírgula) busca menções."""
+    import collections
+    import re
+    pasta = YT / "_chat"
+    pasta.mkdir(parents=True, exist_ok=True)
+    m = re.search(r"(?:v=|youtu\.be/|/live/)([\w-]{11})", url)
+    vid = m.group(1) if m else subprocess.run(YTDLP + ["--print", "id", url], capture_output=True,
+                                               text=True, timeout=180).stdout.strip()
+    arq = pasta / f"{vid}.live_chat.json"
+    if not arq.exists():
+        print("baixando o replay do chat (live de 10 h: ~400 MB, alguns minutos)")
+        r = subprocess.run(YTDLP + ["--skip-download", "--write-subs", "--sub-langs", "live_chat",
+                                    "-o", str(pasta / "%(id)s"), f"https://www.youtube.com/watch?v={vid}"],
+                           capture_output=True, text=True, timeout=3600)
+        if not arq.exists():
+            sys.exit(f"sem replay do chat: {r.stderr[-400:]}")
+    busca = [p.strip().lower() for p in palavras.split(",") if p.strip()]
+    total, risos, frases, achados = (collections.Counter(), collections.Counter(),
+                                     collections.defaultdict(collections.Counter), [])
+    with open(arq, encoding="utf-8") as f:
+        for linha in f:
+            try:
+                acao = json.loads(linha).get("replayChatItemAction", {})
+            except json.JSONDecodeError:
+                continue
+            off = int(acao.get("videoOffsetTimeMsec", 0)) // 1000
+            for a in acao.get("actions", []):
+                item = a.get("addChatItemAction", {}).get("item", {}).get("liveChatTextMessageRenderer")
+                if not item:
+                    continue
+                runs = item.get("message", {}).get("runs", [])
+                texto = "".join(r.get("text") or r.get("emoji", {}).get("emojiId", "") for r in runs).lower()
+                b = off // janela * janela
+                total[b] += 1
+                if any(k in texto for k in RISADA):
+                    risos[b] += 1
+                limpa = re.sub(r"\s+", " ", re.sub(r"k{2,}|(ka){2,}|(ha){2,}|[^\w\s]", " ", texto)).strip()
+                if len(limpa) >= 8:
+                    frases[b][limpa] += 1
+                if busca and any(p in texto for p in busca):
+                    achados.append((off, texto[:90]))
+    if not total:
+        sys.exit("chat vazio")
+    print(f"{vid}: {sum(total.values())} mensagens em {hms(max(total))}; picos de risada (janela {janela} s):")
+    escolhidos = []
+    for b, q in risos.most_common():
+        if b < pular or any(abs(b - e) < 3 * janela for e in escolhidos):
+            continue
+        escolhidos.append(b)
+        frase, rep = (frases[b].most_common(1) or [("", 0)])[0]
+        print(f"{len(escolhidos):>2}. {hms(b)}  risos {q:>4} de {total[b]:>4}  trecho {hms(max(0, b - 40))}-{hms(b + janela)}"
+              f"  | chat: {frase[:60]!r} x{rep}")
+        if len(escolhidos) >= n:
+            break
+    if busca:
+        print(f"menções de {', '.join(busca)}: {len(achados)}")
+        for off, t in achados[:40]:
+            print(f"  {hms(off)}  {t}")
 
 
 def audio(url, nome):
@@ -360,6 +429,8 @@ if __name__ == "__main__":
         reacoes(a[1], opc("--n", 30), opc("--pular", 600))
     elif a[0] == "comentarios":
         comentarios(a[1], opc("--n", 12), opc("--max", 600))
+    elif a[0] == "picos_chat":
+        picos_chat(a[1], opc("--n", 15), opc("--palavras", ""), opc("--janela", 30), opc("--pular", 600))
     elif a[0] == "baixar":
         baixar(a[1], a[2], a[3], a[4], opc("--altura", 1080))
     elif a[0] == "ao_vivo":

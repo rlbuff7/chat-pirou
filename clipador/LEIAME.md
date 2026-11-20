@@ -45,6 +45,7 @@ Cada canal ocupa cerca de 0,5 GB (1080p60) e fica estável, em vez de ~3 GB por 
   - O chat é lido pelo yt-dlp (legenda `live_chat`, sem login). Ao ligar, ele ignora o histórico.
   - O crédito na tela vira `youtube.com/@<handle>`. O nome certinho de cada handle fica em `CREDITO_YT`, no topo do `clip_watcher.py`.
 - **Momento que já saiu do buffer, com a live ainda no ar:** `yt_corte.py ao_vivo URL HH:MM:SS HH:MM:SS nome [--atraso 10]`.
+- **Live do YouTube que já acabou, sem ter gravado:** `yt_corte.py picos_chat URL [--palavras sinuca,bug]` baixa o replay do chat (fica em `clipes/yt/_chat/`), lista os picos de risada com a frase que o chat mais repetiu (gancho "CHAT: ...") e o trecho sugerido (começa 40 s antes: o chat reage com atraso). Achou sozinho a sinuca do Davy (7:44:30). Depois: `baixar` em 360p para conferir e em 1080p para o corte. Para juntar duas partes, use duas entradas no ffmpeg (`-ss/-t` em cada `-i`): o `trim` duplo na mesma entrada passa de 3 GB e o earlyoom do WSL mata o ffmpeg.
   - O `--download-sections` do yt-dlp recusa live em andamento ("cannot be partially downloaded").
   - O YouTube guarda a live inteira em pedaços DASH numerados (`sq`). O cabeçalho do pedaço dá a hora de parede, o tempo da live e o último `sq`; daí sai o início da live e o tamanho do pedaço (5 s).
   - O horário é o do relógio (o mesmo do nome do clipe). `--atraso` desconta o atraso da live.

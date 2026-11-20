@@ -52,3 +52,11 @@ A "fórmula" abaixo é leitura do título e do formato, não prova de por que o 
 - **Curiosidade de mapa sem spoiler** continua forte ("MAP CURIOSITIES AND SECRETS (No Spoilers)", 15,9 mil). O nosso 12 (mapa do GTA 5) e o 15 (pacote de tinta no banco) são desse tipo.
 - Lives grandes hoje: alanzoka 1,3 mi, Flow 617 mil, Overman 263 mil (pt-BR, "Explorando TUDO").
 - **Não fazer:** o cellbit está num quebra-cabeça de mistério escondido (preto e branco, discos, símbolos). Mostrar a solução estraga o mistério para quem caça: pular até o fim da primeira semana.
+
+## Atualização 20/11 ~03:30 (13 buscas, 463 Shorts de 20 canais; detalhes por criador em `plano/canais-por-criador.md`)
+
+- **Bugs puxam forte:** "Injogável?" (353x a mediana), "10 PIORES BUGS DO GTA 6" (62x), "O Bug mais bizarro do GTA 6 era mentira?" (175 mil). Vaga clara para uma compilação de bugs dos nossos streamers.
+- **Curiosidade:** "A ROCKSTAR TEVE QUE DEIXAR O TEMPO MAIS LENTO" (31x), "VAI SER IMPOSSÍVEL DE ZERAR" (59x), "detalhes ABSURDOS" (700 mil).
+- **Título que não descreve nada** ("Jogo: GTA 6 #alanzoka ...") segue no topo: corvozoka com 98x e 92x.
+- **Concorrência por criador:** cellbit tem dois canais gigantes (Cellbit Lives, mediana 103 mil; Cellbit VODS, 56 mil); alanzoka tem Terrorzoka (95 mil) e Shorts from Brazuka (96 mil); Davy tem "Cortes do Davy Jones [OFICIAL]" (11 mil) e a CazéTV; **Lipão e Paulinho quase não têm** (só um corte do Lipão com 31 mil).
+- **DM do dono 3 (19/11 23:00):** Reel da CazéTV, o Davy tentando jogar sinuca ("IMPOSSÍVEL"), 238 mil curtidas em 7 h; comentário do topo "Criado em apartamento é isso aí" com 31 mil curtidas. Junto com a pescaria: **minijogo do Davy é o formato dele**.
